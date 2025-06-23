@@ -39,7 +39,10 @@ make_model_map = {
 make = st.selectbox("Make", list(make_model_map.keys()))
 model_car = st.selectbox("Model", make_model_map[make])
 year = st.selectbox("Year of Manufacture", list(range(2000, 2025)))
-km = st.selectbox("Kilometers Driven", [10000, 20000, 30000, 40000, 50000, 75000, 100000])
+
+# ✅ Number input for Kilometer Driven
+km = st.number_input("Kilometers Driven", min_value=0, max_value=300000, step=5000, value=50000)
+
 fuel = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'CNG', 'LPG', 'Electric'])
 transmission = st.selectbox("Transmission", ['Manual', 'Automatic'])
 location = st.selectbox("Location", ['Pune', 'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad'])
