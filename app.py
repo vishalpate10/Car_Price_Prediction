@@ -75,7 +75,6 @@ fuel_tank = st.sidebar.number_input("Fuel Tank Capacity (Litres)", 20, 120, 45)
 engine = st.sidebar.number_input("Engine (CC)", 600, 6000, 1500)
 max_power = st.sidebar.number_input("Max Power (BHP)", 30, 600, 80)
 max_rpm = st.sidebar.number_input("Max Power (RPM)", 1000, 10000, 6000)
-present_price = st.sidebar.number_input("Present Price (in lakhs)", 0.1, 50.0, 5.0)
 
 # --- Preprocess Inputs ---
 owner_map = {"First": 0, "Second": 1, "Third": 2, "Fourth & Above": 3}
@@ -99,7 +98,6 @@ input_data = pd.DataFrame({
     "Engine (cc)": [engine],
     "Max Power (BHP)": [max_power],
     "Max Power (RPM)": [max_rpm],
-    "Present_Price": [present_price]
 })
 
 # Encode categorical columns
