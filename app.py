@@ -1,22 +1,22 @@
-# --- Set background image ---
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-image: url("https://t3.ftcdn.net/jpg/12/96/43/92/360_F_1296439246_C65lAcWsM7L5qs2lNT6CCuZHZXEIIe4a.jpg");
-        background-attachment: fixed;
-        background-size: cover;
-        background-position: center;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
+
+# --- Set background image (after importing st) ---
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-image: url("https://t3.ftcdn.net/jpg/12/96/43/92/360_F_1296439246_C65lAcWsM7L5qs2lNT6CCuZHZXEIIe4a.jpg");
+        background-attachment: fixed;
+        background-size: cover;
+        background-position: center;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Load trained model
 with open("Final_Linear_Model.pkl", "rb") as file:
@@ -75,6 +75,11 @@ input_data = pd.DataFrame({
     "Fuel Tank Capacity": [fuel_tank]
 })
 
+# --- Encoding for categorical columns ---
+cat_cols = ["Make", "Model", "Fuel Type", "Transmission", "Location", "Color", "Owner", "Seller Type", "Drivetrain"]
+for col in cat_cols:
+    input_data[col] = input_data[col].astype("category").cat.codes
+
 # --- Prediction ---
 st.write("### Input Summary")
 st.dataframe(input_data)
@@ -85,4 +90,3 @@ if st.button("🔍 Predict Price"):
         st.success(f"💰 Predicted Car Price: ₹ {prediction[0]:,.2f}")
     except Exception as e:
         st.error(f"⚠️ Error during prediction: {e}")
-
