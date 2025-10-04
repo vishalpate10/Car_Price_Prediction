@@ -10,7 +10,7 @@ ________________________________________________________________________________
 
 🔍 Predict car price based on specifications
 
-📊 Trained with Random Forest Regressor
+📊 Trained with Linear Regression 
 
 🎨 Beautiful UI with background image
 
