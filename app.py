@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from joblib import load
 
 # --- Background Image ---
@@ -18,11 +17,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Load Model Safely ---
+# --- Load Model ---
 @st.cache_resource
 def load_model():
     try:
-        return load("Final_Linear_Model.pkl")
+        return load("Final_Linear_Model.joblib")
     except Exception as e:
         st.error(f"Error loading model: {e}")
         st.stop()
@@ -32,56 +31,86 @@ model = load_model()
 # --- Page Config ---
 st.set_page_config(page_title="Car Price Prediction", layout="wide")
 st.title("🚗 Car Price Prediction App")
-st.markdown("Predict car prices based on car features using a trained Linear Regression model.")
+st.markdown("Predict car prices using a trained Linear Regression model.")
 
-# --- Input Fields ---
-col1, col2, col3 = st.columns(3)
+# --- Dropdown Options (replace with your dataset unique values) ---
+makes = ["Maruti", "Hyundai", "Tata", "Honda", "Mahindra"]
+models_dict = {
+    "Maruti": ["Swift", "Baleno", "Dzire"],
+    "Hyundai": ["i20", "Verna", "Creta"],
+    "Tata": ["Nexon", "Altroz", "Tiago"],
+    "Honda": ["City", "Amaze", "WR-V"],
+    "Mahindra": ["Thar", "XUV500", "Scorpio"]
+}
+fuel_types = ["Petrol", "Diesel", "CNG", "LPG", "Electric"]
+transmissions = ["Manual", "Automatic"]
+locations = ["Mumbai", "Pune", "Delhi", "Bangalore", "Chennai"]
+owners = ["First", "Second", "Third", "Fourth & Above"]
+seller_types = ["Dealer", "Individual", "Trustmark Dealer"]
+drivetrains = ["FWD", "RWD", "AWD", "4WD"]
 
-with col1:
-    year = st.number_input("Manufacturing Year", 1990, 2025, 2018)
-    fuel_type = st.selectbox("Fuel Type", ["Petrol", "Diesel", "CNG", "LPG", "Electric"])
-    transmission = st.selectbox("Transmission", ["Manual", "Automatic"])
-    owner = st.selectbox("Previous Owners", ["First", "Second", "Third", "Fourth & Above"])
+# --- Sidebar Inputs ---
+st.sidebar.header("Enter Car Details")
 
-with col2:
-    present_price = st.number_input("Present Price (in lakhs)", 0.1, 50.0, 5.0)
-    kms_driven = st.number_input("Kilometers Driven", 500, 500000, 30000)
-    seller_type = st.selectbox("Seller Type", ["Dealer", "Individual", "Trustmark Dealer"])
-    seating_capacity = st.slider("Seating Capacity", 2, 10, 5)
+make = st.sidebar.selectbox("Car Make", makes)
 
-with col3:
-    engine = st.number_input("Engine (CC)", 600, 6000, 1500)
-    max_power = st.number_input("Max Power (BHP)", 30, 600, 80)
-    max_torque = st.number_input("Max Torque (Nm)", 50, 800, 120)
+# Model dropdown depends on selected Make
+model_name = st.sidebar.selectbox("Car Model", models_dict[make])
 
-# --- Categorical Encoding ---
-fuel_petrol = 1 if fuel_type == "Petrol" else 0
-fuel_diesel = 1 if fuel_type == "Diesel" else 0
-trans_manual = 1 if transmission == "Manual" else 0
-seller_individual = 1 if seller_type == "Individual" else 0
+fuel_type = st.sidebar.selectbox("Fuel Type", fuel_types)
+transmission = st.sidebar.selectbox("Transmission Type", transmissions)
+location = st.sidebar.selectbox("Location", locations)
+owner = st.sidebar.selectbox("Owner Type", owners)
+seller_type = st.sidebar.selectbox("Seller Type", seller_types)
+drivetrain = st.sidebar.selectbox("Drivetrain", drivetrains)
+
+# Numeric Inputs
+year = st.sidebar.number_input("Year of Manufacture", 1990, 2025, 2018)
+kilometer = st.sidebar.number_input("Kilometers Driven", 0, 500000, 50000)
+length = st.sidebar.number_input("Length (mm)", 3000, 6000, 4000)
+width = st.sidebar.number_input("Width (mm)", 1200, 2500, 1700)
+height = st.sidebar.number_input("Height (mm)", 1200, 2500, 1500)
+seating_capacity = st.sidebar.slider("Seating Capacity", 2, 10, 5)
+fuel_tank = st.sidebar.number_input("Fuel Tank Capacity (Litres)", 20, 120, 45)
+engine = st.sidebar.number_input("Engine (CC)", 600, 6000, 1500)
+max_power = st.sidebar.number_input("Max Power (BHP)", 30, 600, 80)
+max_rpm = st.sidebar.number_input("Max Power (RPM)", 1000, 10000, 6000)
+present_price = st.sidebar.number_input("Present Price (in lakhs)", 0.1, 50.0, 5.0)
+
+# --- Preprocess Inputs ---
 owner_map = {"First": 0, "Second": 1, "Third": 2, "Fourth & Above": 3}
-owner_num = owner_map[owner]
 
-# --- Prepare Data for Prediction ---
 input_data = pd.DataFrame({
-    'Present_Price': [present_price],
-    'Kms_Driven': [kms_driven],
-    'Owner': [owner_num],
-    'Car_Age': [2025 - year],
-    'Fuel_Type_Petrol': [fuel_petrol],
-    'Fuel_Type_Diesel': [fuel_diesel],
-    'Seller_Type_Individual': [seller_individual],
-    'Transmission_Manual': [trans_manual],
-    'Engine': [engine],
-    'Max_Power': [max_power],
-    'Max_Torque': [max_torque],
-    'Seating_Capacity': [seating_capacity]
+    "Make": [make],
+    "Model": [model_name],
+    "Kilometer": [kilometer],
+    "Fuel Type": [fuel_type],
+    "Transmission": [transmission],
+    "Location": [location],
+    "Owner": [owner_map[owner]],
+    "Seller Type": [seller_type],
+    "Drivetrain": [drivetrain],
+    "Length": [length],
+    "Width": [width],
+    "Height": [height],
+    "Seating Capacity": [seating_capacity],
+    "Fuel Tank Capacity": [fuel_tank],
+    "Car_Age": [2025 - year],
+    "Engine (cc)": [engine],
+    "Max Power (BHP)": [max_power],
+    "Max Power (RPM)": [max_rpm],
+    "Present_Price": [present_price]
 })
+
+# Encode categorical columns
+cat_cols = ["Make", "Model", "Fuel Type", "Transmission", "Location", "Seller Type", "Drivetrain"]
+for col in cat_cols:
+    input_data[col] = input_data[col].astype("category").cat.codes
 
 st.write("### Input Summary")
 st.dataframe(input_data)
 
-# --- Prediction ---
+# --- Predict ---
 if st.button("Predict Car Price"):
     try:
         prediction = model.predict(input_data)[0]
