@@ -1,18 +1,9 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import pickle
-
-# --- Load trained model ---
-with open('car_price_model.pkl', 'rb') as file:
-    model = pickle.load(file)
-
 # --- Set background image ---
 st.markdown(
     f"""
     <style>
     .stApp {{
-        background-image: url("https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=983&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+        background-image: url("https://t3.ftcdn.net/jpg/12/96/43/92/360_F_1296439246_C65lAcWsM7L5qs2lNT6CCuZHZXEIIe4a.jpg");
         background-attachment: fixed;
         background-size: cover;
         background-position: center;
@@ -22,72 +13,76 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Title ---
+import streamlit as st
+import pandas as pd
+import numpy as np
+import pickle
+
+# Load trained model
+with open("Final_Linear_Model.pkl", "rb") as file:
+    model = pickle.load(file)
+
+st.set_page_config(page_title="Car Price Prediction", layout="wide")
+
+# App title
 st.title("🚗 Car Price Prediction App")
+st.markdown("### Enter car details to predict the selling price")
 
-# --- Make to Model mapping ---
-make_model_map = {
-    'Maruti': ['Swift', 'Baleno', 'Dzire', 'Ertiga'],
-    'Hyundai': ['i10', 'i20', 'Creta', 'Verna'],
-    'Honda': ['City', 'Jazz', 'Amaze'],
-    'Toyota': ['Fortuner', 'Innova', 'Glanza'],
-    'Ford': ['EcoSport', 'Figo', 'Endeavour'],
-    'BMW': ['X1', 'X3', '3 Series', '5 Series']
-}
+# --- Sidebar for user inputs ---
+st.sidebar.header("Car Details")
 
-# --- User Inputs ---
-make = st.selectbox("Make", list(make_model_map.keys()))
-model_car = st.selectbox("Model", make_model_map[make])
-year = st.selectbox("Year of Manufacture", list(range(2000, 2025)))
+# Input fields
+make = st.sidebar.text_input("Car Make (e.g. Maruti, Hyundai, Tata)")
+model_name = st.sidebar.text_input("Car Model (e.g. Swift, i20, Nexon)")
+year = st.sidebar.number_input("Year of Manufacture", 1990, 2025, 2018)
+kilometer = st.sidebar.number_input("Kilometers Driven", 0, 500000, 50000)
+fuel_type = st.sidebar.selectbox("Fuel Type", ["Petrol", "Diesel", "CNG", "LPG", "Electric"])
+transmission = st.sidebar.selectbox("Transmission Type", ["Manual", "Automatic"])
+location = st.sidebar.text_input("Location (e.g. Mumbai, Pune, Delhi)")
+color = st.sidebar.text_input("Car Color", "White")
+owner = st.sidebar.selectbox("Owner Type", ["First", "Second", "Third", "Fourth & Above"])
+seller_type = st.sidebar.selectbox("Seller Type", ["Dealer", "Individual", "Trustmark Dealer"])
+engine = st.sidebar.number_input("Engine (CC)", 600, 6000, 1500)
+max_power = st.sidebar.number_input("Max Power (BHP)", 30, 600, 80)
+max_torque = st.sidebar.number_input("Max Torque (Nm)", 50, 800, 120)
+drivetrain = st.sidebar.selectbox("Drivetrain", ["FWD", "RWD", "AWD", "4WD"])
+length = st.sidebar.number_input("Length (mm)", 3000, 6000, 4000)
+width = st.sidebar.number_input("Width (mm)", 1200, 2500, 1700)
+height = st.sidebar.number_input("Height (mm)", 1200, 2500, 1500)
+seating_capacity = st.sidebar.slider("Seating Capacity", 2, 10, 5)
+fuel_tank = st.sidebar.number_input("Fuel Tank Capacity (Litres)", 20, 120, 45)
 
-# ✅ Number input for Kilometer Driven
-km = st.number_input("Kilometers Driven", min_value=0, max_value=300000, step=5000, value=50000)
-
-fuel = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'CNG', 'LPG', 'Electric'])
-transmission = st.selectbox("Transmission", ['Manual', 'Automatic'])
-location = st.selectbox("Location", ['Pune', 'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad'])
-owner = st.selectbox("Owner Type", ['First Owner', 'Second Owner', 'Third Owner', 'Fourth & Above Owner'])
-seller = st.selectbox("Seller Type", ['Individual', 'Dealer', 'Trustmark Dealer'])
-engine = st.selectbox("Engine (cc)", [800, 1000, 1197, 1498, 1591, 1998, 2200])
-power = st.selectbox("Max Power (bhp)", [60, 75, 90, 100, 110, 120, 150])
-drive = st.selectbox("Drivetrain", ['FWD', 'RWD', 'AWD', '4WD'])
-length = st.selectbox("Length (mm)", [3500, 3700, 3900, 4100, 4300])
-width = st.selectbox("Width (mm)", [1500, 1600, 1700, 1800])
-height = st.selectbox("Height (mm)", [1450, 1500, 1550, 1600])
-seating = st.selectbox("Seating Capacity", [2, 4, 5, 6, 7, 8])
-fuel_tank = st.selectbox("Fuel Tank Capacity (L)", [30, 35, 40, 45, 50])
-
-# --- Derived feature ---
-car_age = 2025 - year
-
-# --- Create input dataframe ---
+# --- Prepare Input Data ---
 input_data = pd.DataFrame({
-    'Kilometer': [km],
-    'Engine': [engine],
-    'Max Power': [power],
-    'Length': [length],
-    'Width': [width],
-    'Height': [height],
-    'Seating Capacity': [seating],
-    'Fuel Tank Capacity': [fuel_tank],
-    'Car_Age': [car_age],
-    f'Make_{make}': [1],
-    f'Fuel Type_{fuel}': [1],
-    f'Transmission_{transmission}': [1],
-    f'Location_{location}': [1],
-    f'Owner_{owner}': [1],
-    f'Seller Type_{seller}': [1],
-    f'Drivetrain_{drive}': [1],
+    "Make": [make],
+    "Model": [model_name],
+    "Year": [year],
+    "Kilometer": [kilometer],
+    "Fuel Type": [fuel_type],
+    "Transmission": [transmission],
+    "Location": [location],
+    "Color": [color],
+    "Owner": [owner],
+    "Seller Type": [seller_type],
+    "Engine": [engine],
+    "Max Power": [max_power],
+    "Max Torque": [max_torque],
+    "Drivetrain": [drivetrain],
+    "Length": [length],
+    "Width": [width],
+    "Height": [height],
+    "Seating Capacity": [seating_capacity],
+    "Fuel Tank Capacity": [fuel_tank]
 })
 
-# --- Match model columns ---
-model_columns = model.feature_names_in_
-for col in model_columns:
-    if col not in input_data.columns:
-        input_data[col] = 0
-input_data = input_data[model_columns]
-
 # --- Prediction ---
-if st.button("Predict Price"):
-    price = model.predict(input_data)[0]
-    st.success(f"💰 Estimated Car Price: ₹{price:,.0f}")
+st.write("### Input Summary")
+st.dataframe(input_data)
+
+if st.button("🔍 Predict Price"):
+    try:
+        prediction = model.predict(input_data)
+        st.success(f"💰 Predicted Car Price: ₹ {prediction[0]:,.2f}")
+    except Exception as e:
+        st.error(f"⚠️ Error during prediction: {e}")
+
