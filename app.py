@@ -21,7 +21,7 @@ st.markdown(
 @st.cache_resource
 def load_model():
     try:
-        return load("Final_Linear_Model.joblib")
+        return load("Final_Linear_Model.pkl")
     except Exception as e:
         st.error(f"Error loading model: {e}")
         st.stop()
