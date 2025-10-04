@@ -1,92 +1,74 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
+from joblib import load  # ✅ safer than pickle for sklearn models
 
-# --- Set background image (after importing st) ---
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-image: url("https://t3.ftcdn.net/jpg/12/96/43/92/360_F_1296439246_C65lAcWsM7L5qs2lNT6CCuZHZXEIIe4a.jpg");
-        background-attachment: fixed;
-        background-size: cover;
-        background-position: center;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# ------------------------------
+# Load trained model safely
+# ------------------------------
+@st.cache_resource
+def load_model():
+    try:
+        model = load("Final_Linear_Model.joblib")  # use .joblib instead of .pkl
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        st.stop()
+    return model
 
-# Load trained model
-with open("Final_Linear_Model.pkl", "rb") as file:
-    model = pickle.load(file)
+model = load_model()
 
+# ------------------------------
+# Streamlit page configuration
+# ------------------------------
 st.set_page_config(page_title="Car Price Prediction", layout="wide")
 
-# App title
 st.title("🚗 Car Price Prediction App")
-st.markdown("### Enter car details to predict the selling price")
+st.markdown("Predict car prices based on features using a trained Linear Regression model.")
 
-# --- Sidebar for user inputs ---
-st.sidebar.header("Car Details")
+# ------------------------------
+# Input fields for user data
+# ------------------------------
+col1, col2, col3 = st.columns(3)
 
-# Input fields
-make = st.sidebar.text_input("Car Make (e.g. Maruti, Hyundai, Tata)")
-model_name = st.sidebar.text_input("Car Model (e.g. Swift, i20, Nexon)")
-year = st.sidebar.number_input("Year of Manufacture", 1990, 2025, 2018)
-kilometer = st.sidebar.number_input("Kilometers Driven", 0, 500000, 50000)
-fuel_type = st.sidebar.selectbox("Fuel Type", ["Petrol", "Diesel", "CNG", "LPG", "Electric"])
-transmission = st.sidebar.selectbox("Transmission Type", ["Manual", "Automatic"])
-location = st.sidebar.text_input("Location (e.g. Mumbai, Pune, Delhi)")
-color = st.sidebar.text_input("Car Color", "White")
-owner = st.sidebar.selectbox("Owner Type", ["First", "Second", "Third", "Fourth & Above"])
-seller_type = st.sidebar.selectbox("Seller Type", ["Dealer", "Individual", "Trustmark Dealer"])
-engine = st.sidebar.number_input("Engine (CC)", 600, 6000, 1500)
-max_power = st.sidebar.number_input("Max Power (BHP)", 30, 600, 80)
-max_torque = st.sidebar.number_input("Max Torque (Nm)", 50, 800, 120)
-drivetrain = st.sidebar.selectbox("Drivetrain", ["FWD", "RWD", "AWD", "4WD"])
-length = st.sidebar.number_input("Length (mm)", 3000, 6000, 4000)
-width = st.sidebar.number_input("Width (mm)", 1200, 2500, 1700)
-height = st.sidebar.number_input("Height (mm)", 1200, 2500, 1500)
-seating_capacity = st.sidebar.slider("Seating Capacity", 2, 10, 5)
-fuel_tank = st.sidebar.number_input("Fuel Tank Capacity (Litres)", 20, 120, 45)
+with col1:
+    year = st.number_input("Car Manufacturing Year", 2000, 2025, 2018)
 
-# --- Prepare Input Data ---
+with col2:
+    present_price = st.number_input("Present Price (in lakhs)", 0.1, 50.0, 5.0)
+
+with col3:
+    kms_driven = st.number_input("Kms Driven", 500, 200000, 30000)
+
+owner = st.selectbox("Number of Previous Owners", [0, 1, 2, 3])
+fuel_type = st.selectbox("Fuel Type", ["Petrol", "Diesel", "CNG"])
+seller_type = st.selectbox("Seller Type", ["Dealer", "Individual"])
+transmission = st.selectbox("Transmission Type", ["Manual", "Automatic"])
+
+# ------------------------------
+# Convert categorical inputs to numeric
+# ------------------------------
+fuel_petrol = 1 if fuel_type == "Petrol" else 0
+fuel_diesel = 1 if fuel_type == "Diesel" else 0
+seller_individual = 1 if seller_type == "Individual" else 0
+trans_manual = 1 if transmission == "Manual" else 0
+
+# ------------------------------
+# Prepare input data for prediction
+# ------------------------------
 input_data = pd.DataFrame({
-    "Make": [make],
-    "Model": [model_name],
-    "Year": [year],
-    "Kilometer": [kilometer],
-    "Fuel Type": [fuel_type],
-    "Transmission": [transmission],
-    "Location": [location],
-    "Color": [color],
-    "Owner": [owner],
-    "Seller Type": [seller_type],
-    "Engine": [engine],
-    "Max Power": [max_power],
-    "Max Torque": [max_torque],
-    "Drivetrain": [drivetrain],
-    "Length": [length],
-    "Width": [width],
-    "Height": [height],
-    "Seating Capacity": [seating_capacity],
-    "Fuel Tank Capacity": [fuel_tank]
+    'Present_Price': [present_price],
+    'Kms_Driven': [kms_driven],
+    'Owner': [owner],
+    'Car_Age': [2025 - year],
+    'Fuel_Type_Petrol': [fuel_petrol],
+    'Fuel_Type_Diesel': [fuel_diesel],
+    'Seller_Type_Individual': [seller_individual],
+    'Transmission_Manual': [trans_manual]
 })
 
-# --- Encoding for categorical columns ---
-cat_cols = ["Make", "Model", "Fuel Type", "Transmission", "Location", "Color", "Owner", "Seller Type", "Drivetrain"]
-for col in cat_cols:
-    input_data[col] = input_data[col].astype("category").cat.codes
-
-# --- Prediction ---
-st.write("### Input Summary")
-st.dataframe(input_data)
-
-if st.button("🔍 Predict Price"):
-    try:
-        prediction = model.predict(input_data)
-        st.success(f"💰 Predicted Car Price: ₹ {prediction[0]:,.2f}")
-    except Exception as e:
-        st.error(f"⚠️ Error during prediction: {e}")
+# ------------------------------
+# Predict price
+# ------------------------------
+if st.button("Predict Car Price"):
+    prediction = model.predict(input_data)[0]
+    st.success(f"💰 Estimated Selling Price: ₹ {prediction:.2f} Lakhs")
