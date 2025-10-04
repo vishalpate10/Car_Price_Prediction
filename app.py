@@ -33,7 +33,7 @@ st.set_page_config(page_title="Car Price Prediction", layout="wide")
 st.title("🚗 Car Price Prediction App")
 st.markdown("Predict car prices using a trained Linear Regression model.")
 
-# --- Dropdown Options (replace with your dataset unique values) ---
+# --- Dropdown Options ---
 makes = ["Maruti", "Hyundai", "Tata", "Honda", "Mahindra"]
 models_dict = {
     "Maruti": ["Swift", "Baleno", "Dzire"],
@@ -49,36 +49,39 @@ owners = ["First", "Second", "Third", "Fourth & Above"]
 seller_types = ["Dealer", "Individual", "Trustmark Dealer"]
 drivetrains = ["FWD", "RWD", "AWD", "4WD"]
 
-# --- Sidebar Inputs ---
-st.sidebar.header("Enter Car Details")
-
-make = st.sidebar.selectbox("Car Make", makes)
-
-# Model dropdown depends on selected Make
-model_name = st.sidebar.selectbox("Car Model", models_dict[make])
-
-fuel_type = st.sidebar.selectbox("Fuel Type", fuel_types)
-transmission = st.sidebar.selectbox("Transmission Type", transmissions)
-location = st.sidebar.selectbox("Location", locations)
-owner = st.sidebar.selectbox("Owner Type", owners)
-seller_type = st.sidebar.selectbox("Seller Type", seller_types)
-drivetrain = st.sidebar.selectbox("Drivetrain", drivetrains)
-
-# Numeric Inputs
-year = st.sidebar.number_input("Year of Manufacture", 1990, 2025, 2018)
-kilometer = st.sidebar.number_input("Kilometers Driven", 0, 500000, 50000)
-length = st.sidebar.number_input("Length (mm)", 3000, 6000, 4000)
-width = st.sidebar.number_input("Width (mm)", 1200, 2500, 1700)
-height = st.sidebar.number_input("Height (mm)", 1200, 2500, 1500)
-seating_capacity = st.sidebar.slider("Seating Capacity", 2, 10, 5)
-fuel_tank = st.sidebar.number_input("Fuel Tank Capacity (Litres)", 20, 120, 45)
-engine = st.sidebar.number_input("Engine (CC)", 600, 6000, 1500)
-max_power = st.sidebar.number_input("Max Power (BHP)", 30, 600, 80)
-max_rpm = st.sidebar.number_input("Max Power (RPM)", 1000, 10000, 6000)
-
-# --- Preprocess Inputs ---
 owner_map = {"First": 0, "Second": 1, "Third": 2, "Fourth & Above": 3}
 
+# --- Columns Layout ---
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    make = st.selectbox("Car Make", makes)
+    year = st.number_input("Year of Manufacture", 1990, 2025, 2018)
+    kilometer = st.number_input("Kilometers Driven", 0, 500000, 50000)
+    fuel_type = st.selectbox("Fuel Type", fuel_types)
+    transmission = st.selectbox("Transmission Type", transmissions)
+
+with col2:
+    model_name = st.selectbox("Car Model", models_dict[make])
+    location = st.selectbox("Location", locations)
+    owner = st.selectbox("Owner Type", owners)
+    seller_type = st.selectbox("Seller Type", seller_types)
+    drivetrain = st.selectbox("Drivetrain", drivetrains)
+
+with col3:
+    length = st.number_input("Length (mm)", 3000, 6000, 4000)
+    width = st.number_input("Width (mm)", 1200, 2500, 1700)
+    height = st.number_input("Height (mm)", 1200, 2500, 1500)
+    seating_capacity = st.slider("Seating Capacity", 2, 10, 5)
+    fuel_tank = st.number_input("Fuel Tank Capacity (Litres)", 20, 120, 45)
+
+with col4:
+    engine = st.number_input("Engine (CC)", 600, 6000, 1500)
+    max_power = st.number_input("Max Power (BHP)", 30, 600, 80)
+    max_rpm = st.number_input("Max Power (RPM)", 1000, 10000, 6000)
+    st.write("")  # empty space for alignment
+
+# --- Prepare Input Data ---
 input_data = pd.DataFrame({
     "Make": [make],
     "Model": [model_name],
